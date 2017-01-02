@@ -1,0 +1,85 @@
+plugins {
+    id "java"
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile group: 'com.github.samtools', name: 'htsjdk', version: '1.128'
+  testCompile group: 'org.testng', name: 'testng', version: '6.9.10'
+  testCompile group: 'com.google.caliper', name: 'caliper', version: '1.0-beta-2'
+
+}
+
+task runBenchmark(type: JavaExec, dependsOn: test) {
+    def vmVer = System.getProperty('java.version')
+    def osName = System.getProperty('os.name').replaceAll('\\s','')
+    def osArch = System.getProperty('os.arch')
+    def fnameBase = "ver${version}_${osName}-${osArch}_jvm${vmVer}"
+    def benchMarksDir = "${project.buildDir}/benchmarks"
+    ant.mkdir(dir: benchMarksDir)
+    def outStream = new FileOutputStream("${benchMarksDir}/${fnameBase}-out.txt")
+    standardOutput = outStream
+    errorOutput = System.err
+    main = 'com.google.caliper.runner.CaliperMain'
+    classpath = sourceSets.test.runtimeClasspath
+    args = ['vrr.jargon.exponential.GammaInverseCDFBenchmark']
+    jvmArgs = ['-ea', '-Djava.library.path=/usr/local/lib/R/3.3/site-library/rJava/jri']
+    environment = [R_HOME : "/usr/local/Cellar/r/3.3.1_2/R.framework/Resources"]
+}
+group 'net.vrr.callviz'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+
+sourceCompatibility = 1.5
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.3.11'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+group 'net.vrr'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+
+sourceCompatibility = 1.5
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.3.11'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+group 'vrr'
+version '1.0-SNAPSHOT'
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '2.13'
+  distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
+}
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.5
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
