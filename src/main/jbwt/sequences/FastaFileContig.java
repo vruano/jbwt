@@ -3,13 +3,15 @@ package jbwt.sequences;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequence;
+import jbwt.index.Alphabet;
+import jbwt.index.DNASymbol;
 
 import java.util.Objects;
 
 /**
  * Created by valentin on 6/23/16.
  */
-public class FastaFileContig implements Contig<IndexedFastaSequenceFile> {
+public class FastaFileContig implements Contig {
 
     private static final int CACHE_AHEAD_MIN_SIZE = 1024;
 
@@ -32,24 +34,23 @@ public class FastaFileContig implements Contig<IndexedFastaSequenceFile> {
     }
 
     @Override
-    public IndexedFastaSequenceFile source() {
-        return source;
-    }
-
-    @Override
-    public int sourceOffset() {
-        return 0;
-    }
-
-    @Override
-    public int length() {
+    public long length() {
         return record.getSequenceLength();
     }
 
     @Override
-    public byte getByte(final int position) {
-        ensureCacheContains(position, 1);
-        return source.getSubsequenceAt(name(), position + 1, position + 1).getBases()[0];
+    public DNASymbol getSymbol(final long position) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
+
+    @Override
+    public int getInt(final long position) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
+
+    @Override
+    public Alphabet<DNASymbol> getAlphabet() {
+        return DNASymbol.ALPHABET;
     }
 
     private void ensureCacheContains(final int start, final int length) {

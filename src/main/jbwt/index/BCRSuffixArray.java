@@ -6,7 +6,7 @@ import sun.security.util.BitArray;
 /**
  * Created by valentin on 12/27/16.
  */
-public class BCRSuffixArray<A extends FMAlphabet<?>> {
+public class BCRSuffixArray<A extends Alphabet<?>> {
 
     private final A alphabet;
 

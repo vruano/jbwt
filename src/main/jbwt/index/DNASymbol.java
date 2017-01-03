@@ -3,13 +3,20 @@ package jbwt.index;
 /**
  * Created by valentin on 12/26/16.
  */
-public enum FMDNASymbol implements FMSymbol {
+public enum DNASymbol implements Symbol {
     $() {
         public boolean isSentinel() {
             return true;
         }
     }, A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N;
 
+
+    public static final Alphabet<DNASymbol> ALPHABET =
+            new Alphabet<>(DNASymbol.values());
+
+    public int toInt() {
+        return ordinal();
+    }
 
     public boolean isConcrete() {
         return this == $ || this == A || this == C || this == G || this == T;
@@ -23,15 +30,15 @@ public enum FMDNASymbol implements FMSymbol {
         return false;
     }
 
-    public static FMDNASymbol valueOf(final byte b) {
+    public static DNASymbol valueOf(final byte b) {
         return valueOf((int) b);
     }
 
-    public static FMDNASymbol valueOf(final char c) {
+    public static DNASymbol valueOf(final char c) {
         return valueOf((int) c);
     }
 
-    public static FMDNASymbol valueOf(final int c) {
+    public static DNASymbol valueOf(final int c) {
         if (Character.isUpperCase(c)) {
             switch (c) {
                 case 'A': return A;

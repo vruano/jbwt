@@ -1,7 +1,7 @@
 package jbwt.ui;
 
 import jbwt.intervals.UserCoordinate;
-import jbwt.sequences.BaseSequence;
+import jbwt.sequences.SymbolSequence;
 import jbwt.sequences.FastaFileReference;
 import jbwt.sequences.Reference;
 import com.sun.javafx.collections.ImmutableObservableList;
@@ -27,7 +27,7 @@ public class Controller {
     @FXML
     protected AutoCompleteComboBox<UserCoordinate> coordinatesBox;
 
-    protected Reference<?> reference = Reference.EMPTY;
+    protected Reference reference = Reference.EMPTY;
 
     @FXML
     public void initialize() {
@@ -48,14 +48,14 @@ public class Controller {
     private void handleCoordinateChange(final ObservableValue<? extends UserCoordinate> observable,
                                         final UserCoordinate oldValue, final UserCoordinate newValue) {
         if (reference != null) {
-            final BaseSequence<?> bases = reference.subSequence(newValue.contig, newValue.start - 1, newValue.stop - newValue.start + 1);
+            final SymbolSequence<?> bases = reference.subSequence(newValue.contig, newValue.start - 1, newValue.stop - newValue.start + 1);
             final String string = new String(bases.getBytes());
 
             trackPane.getChildren().stream()
                     .forEach(c -> {
                         if (c instanceof TextFlow) {
                             ((TextFlow) c).getChildren().clear();
-                            ((TextFlow) c).getChildren().add(new Text(new String(bases.getBytes(0, bases.length()))));
+                            ((TextFlow) c).getChildren().add(new Text(new String(bases.getBytes(0, (int) bases.length()))));
                         }
                     });
         }

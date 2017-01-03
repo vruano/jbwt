@@ -1,22 +1,18 @@
 package jbwt.sequences;
 
+import jbwt.index.DNASymbol;
+
 import java.util.Collections;
 import java.util.Map;
 
 /**
  * Created by valentin on 6/23/16.
  */
-public interface Reference<S> {
+public interface Reference {
 
-    S source();
+    Map<String, Contig> contigs();
 
-    Map<String, Contig<S>> contigs();
-
-    Reference<String> EMPTY = new Reference() {
-        @Override
-        public String source() {
-            return "NONE";
-        }
+    Reference EMPTY = new Reference() {
 
         @Override
         public Map<String, Contig> contigs() {
@@ -24,12 +20,12 @@ public interface Reference<S> {
         }
     };
 
-    default BaseSequence<S> subSequence(final String contigName, final int offset, final int length) {
+    default SymbolSequence<DNASymbol> subSequence(final String contigName, final int offset, final int length) {
         if (!contigs().containsKey(contigName)) {
             throw new IllegalArgumentException("unknown contig '" + contigName + "'");
         } else {
-            final Contig<S> contig = contigs().get(contigName);
-            final int contigLength = contig.length();
+            final Contig contig = contigs().get(contigName);
+            final long contigLength = contig.length();
             if (offset + length >= contigLength) {
                 throw new IllegalArgumentException(String.format("the requested stop position (%d) is beyond the contig end (%d)", offset + length, contigLength));
             } else {

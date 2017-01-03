@@ -5,14 +5,29 @@ import jbwt.utils.ParamUtils;
 /**
  * Created by valentin on 12/25/16.
  */
-public class FMIndex<A extends FMAlphabet<?>> {
+public class FMIndex<A extends Symbol> {
 
-    private final A alphabet;
+    private final BWTArray<A> bwt;
 
-    private FMIndex(final A alphabet, final int[] F, final long[] L) {
-        this.alphabet = ParamUtils.requiresNonNull(alphabet);
-        ParamUtils.validLength(F, alphabet.size(), alphabet.size());
-        ParamUtils.requiresNonNull(L);
+    private final long[] C;
+    private final long[][] occurrences;
+    private final long[] locations;
+    private final int occurrencePeriod;
+    private final int locationPeriod;
+
+    private FMIndex(final BWTArray<A> bwt, final int occurrencePeriod, final int locationPeriod) {
+        this.bwt = ParamUtils.requiresNonNull(bwt);
+        this.occurrencePeriod = ParamUtils.requiresGreaterThanZero(occurrencePeriod);
+        this.locationPeriod = ParamUtils.requiresGreaterThanZero(locationPeriod);
+        this.C = bwt.getCounts();
+        final long length = bwt.length();
+        final int alphabetSize = bwt.getAlphabet().size();
+        occurrences = new long[alphabetSize][(int) (length + occurrencePeriod + 1) / occurrencePeriod];
+        locations = new long[(int) (length + locationPeriod + 1) / locationPeriod];
+        fillOccurrenceAndLocationsArrays(occurrences, locations, bwt);
     }
 
+    private void fillOccurrenceAndLocationsArrays(final long[][] occurrences, final long[] locations, final BWTArray<A> bwt) {
+
+    }
 }

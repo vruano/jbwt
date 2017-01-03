@@ -1,5 +1,8 @@
 package jbwt.sequences;
 
+import jbwt.index.Alphabet;
+import jbwt.index.DNASymbol;
+import jbwt.index.Symbol;
 import jbwt.utils.ParamUtils;
 import htsjdk.samtools.SAMRecord;
 
@@ -11,27 +14,27 @@ public final class BaseReads {
     private BaseReads() {
     }
 
-    private static BaseSequence<SAMRecord> fromRead(final SAMRecord read) {
-        return new BaseSequence<SAMRecord>() {
-            @Override
-            public SAMRecord source() {
-                return read;
-            }
+    private static SymbolSequence fromRead(final SAMRecord read) {
+        return new SymbolSequence() {
 
             @Override
-            public int sourceOffset() {
-                return 0;
-            }
-
-            @Override
-            public int length() {
+            public long length() {
                 return read.getReadLength();
             }
 
             @Override
-            public byte getByte(final int position) {
-                ParamUtils.validIndex(position, 0, read.getReadLength());
-                return read.getReadBases()[position];
+            public Symbol getSymbol(long position) {
+                return DNASymbol.valueOf(read.getReadBases()[(int) position]);
+            }
+
+            @Override
+            public int getInt(long position) {
+                return DNASymbol.valueOf(read.getReadBases()[(int) position]).toInt();
+            }
+
+            @Override
+            public Alphabet getAlphabet() {
+                return DNASymbol.ALPHABET;
             }
         };
     }

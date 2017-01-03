@@ -252,8 +252,25 @@ public class BitArray implements Cloneable {
         }
     }
 
-    public class BitArrayIterator {
-        private long nextIndex = 0;
+    public Iterator iterator() {
+        return new Iterator();
+    }
+
+    public Iterator iterator(final long position) {
+        return new Iterator(position);
+    }
+
+    public class Iterator {
+        private long nextIndex;
+
+        public Iterator() {
+            nextIndex = 0;
+        }
+
+        public Iterator(final long position) {
+            ParamUtils.requiresBetween(position, 0, BitArray.this.length);
+            nextIndex = position;
+        }
 
         public boolean nextBoolean() {
             if (nextIndex >= length)
@@ -288,6 +305,24 @@ public class BitArray implements Cloneable {
         public boolean hasNextLong(final int length) {
             ParamUtils.requiresBetween(length, 0, Long.SIZE);
             return nextIndex < BitArray.this.length - length + 1;
+        }
+
+        public boolean hasMore() {
+            return nextIndex < BitArray.this.length;
+        }
+
+        public long previousLong(final int length) {
+            ParamUtils.requiresBetween(length, 0, Long.SIZE);
+            if (nextIndex < length)
+                throw new NoSuchElementException();
+            nextIndex -= length;
+            return BitArray.this.getLongUnchecked(nextIndex, length);
+        }
+
+        public void insert(final long value, final int length) {
+            ParamUtils.requiresBetween(length, 0, Long.SIZE);
+            BitArray.this.insert(nextIndex, value, length);
+            nextIndex += length;
         }
     }
 
