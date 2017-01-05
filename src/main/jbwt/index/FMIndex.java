@@ -7,7 +7,7 @@ import jbwt.utils.ParamUtils;
  */
 public class FMIndex<A extends Symbol> {
 
-    private final BWTArray<A> bwt;
+    private final BWTAvandoned<A> bwt;
 
     private final long[] C;
     private final long[][] occurrences;
@@ -15,19 +15,19 @@ public class FMIndex<A extends Symbol> {
     private final int occurrencePeriod;
     private final int locationPeriod;
 
-    private FMIndex(final BWTArray<A> bwt, final int occurrencePeriod, final int locationPeriod) {
+    private FMIndex(final BWTAvandoned<A> bwt, final int occurrencePeriod, final int locationPeriod) {
         this.bwt = ParamUtils.requiresNonNull(bwt);
         this.occurrencePeriod = ParamUtils.requiresGreaterThanZero(occurrencePeriod);
         this.locationPeriod = ParamUtils.requiresGreaterThanZero(locationPeriod);
         this.C = bwt.getCounts();
         final long length = bwt.length();
-        final int alphabetSize = bwt.getAlphabet().size();
+        final int alphabetSize = bwt.alphabet().size();
         occurrences = new long[alphabetSize][(int) (length + occurrencePeriod + 1) / occurrencePeriod];
         locations = new long[(int) (length + locationPeriod + 1) / locationPeriod];
         fillOccurrenceAndLocationsArrays(occurrences, locations, bwt);
     }
 
-    private void fillOccurrenceAndLocationsArrays(final long[][] occurrences, final long[] locations, final BWTArray<A> bwt) {
+    private void fillOccurrenceAndLocationsArrays(final long[][] occurrences, final long[] locations, final BWTAvandoned<A> bwt) {
 
     }
 }

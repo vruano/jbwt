@@ -33,7 +33,7 @@ public final class BaseReads {
             }
 
             @Override
-            public Alphabet getAlphabet() {
+            public Alphabet alphabet() {
                 return DNASymbol.ALPHABET;
             }
         };

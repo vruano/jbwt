@@ -24,7 +24,7 @@ public class Alphabet<A extends Symbol>  {
     public Alphabet(final A ... symbols) {
         this.symbols = checkOnSymbols(symbols);
         this.size = symbols.length;
-        this.symbolBits = (int) Math.ceil(Math.log(this.size + 1) / Math.log(2));
+        this.symbolBits = (int) Math.ceil(Math.log(this.size) / Math.log(2));
         this.longSymbols = Long.SIZE / this.symbolBits;
         this.mask = (long) Math.pow(2, this.symbolBits) - 1;
     }

@@ -39,7 +39,7 @@ public final class BaseArrays {
             }
 
             @Override
-            public Alphabet getAlphabet() {
+            public Alphabet alphabet() {
                 return DNASymbol.ALPHABET;
             }
 

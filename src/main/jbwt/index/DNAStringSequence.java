@@ -30,7 +30,7 @@ public class DNAStringSequence implements SymbolSequence<DNASymbol>  {
     }
 
     @Override
-    public Alphabet<DNASymbol> getAlphabet() {
+    public Alphabet<DNASymbol> alphabet() {
         return DNASymbol.ALPHABET;
     }
 }

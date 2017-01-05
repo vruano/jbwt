@@ -110,6 +110,10 @@ public class BitArray implements Cloneable {
     public void set(final long position, final long value, final int length) {
         ParamUtils.requiresBetween(length, 0, Long.SIZE);
         ParamUtils.validIndex(position, 0, this.length);
+        setUnsafe(position, value, length);
+    }
+
+    private void setUnsafe(final long position, final long value, final int length) {
         if (length > 0) { // if length == 0 there is nothing that needs to be done.
             final int blockIndex = (int) (position >> BLOCK_SIZE_IN_BITS);
             final int bitOffset = (byte) (position & BITOFFSET_MASK);
@@ -261,68 +265,96 @@ public class BitArray implements Cloneable {
     }
 
     public class Iterator {
-        private long nextIndex;
+        private long position;
 
         public Iterator() {
-            nextIndex = 0;
+            position = 0;
+        }
+
+        public long position() {
+            return position;
         }
 
         public Iterator(final long position) {
             ParamUtils.requiresBetween(position, 0, BitArray.this.length);
-            nextIndex = position;
+            this.position = position;
         }
 
         public boolean nextBoolean() {
-            if (nextIndex >= length)
+            if (position >= length)
                 throw new NoSuchElementException();
-            return BitArray.this.getBoolean(nextIndex++);
+            return BitArray.this.getBoolean(position++);
         }
 
         public long nextLong() {
-            if (nextIndex >= length - Long.SIZE)
+            if (position >= length - Long.SIZE)
                 throw new NoSuchElementException();
-            final long  thisIndex = nextIndex;
-            nextIndex += Long.SIZE;
+            final long  thisIndex = position;
+            position += Long.SIZE;
             return BitArray.this.getLongUnchecked(thisIndex, Long.SIZE);
         }
 
         public long nextLong(final int length) {
-            if (nextIndex >= BitArray.this.length - length)
+            if (position >= BitArray.this.length - length)
                 throw new NoSuchElementException();
-            final long thisIndex = nextIndex;
-            nextIndex += length;
+            final long thisIndex = position;
+            position += length;
             return BitArray.this.getLong(thisIndex, length);
         }
 
         public boolean hasNextBoolean() {
-            return nextIndex < length;
+            return position < length;
         }
 
         public boolean hasNextLong() {
-            return nextIndex < length - Long.SIZE + 1;
+            return position < length - Long.SIZE + 1;
         }
 
         public boolean hasNextLong(final int length) {
             ParamUtils.requiresBetween(length, 0, Long.SIZE);
-            return nextIndex < BitArray.this.length - length + 1;
+            return position < BitArray.this.length - length + 1;
         }
 
         public boolean hasMore() {
-            return nextIndex < BitArray.this.length;
+            return position < BitArray.this.length;
         }
 
         public long previousLong(final int length) {
             ParamUtils.requiresBetween(length, 0, Long.SIZE);
-            if (nextIndex < length)
+            if (position < length)
                 throw new NoSuchElementException();
-            nextIndex -= length;
-            return BitArray.this.getLongUnchecked(nextIndex, length);
+            position -= length;
+            return BitArray.this.getLongUnchecked(position, length);
         }
 
         public void insert(final long value, final int length) {
             ParamUtils.requiresBetween(length, 0, Long.SIZE);
-            BitArray.this.insert(nextIndex, value, length);
-            nextIndex += length;
+            BitArray.this.insert(position, value, length);
+        }
+
+        public void goTo(final long position) {
+            ParamUtils.requiresBetween(position, 0, BitArray.this.length);
+            this.position = position;
+        }
+
+        public void skip(final long increase) {
+            final long newPosition = position + increase;
+            ParamUtils.requiresBetween(newPosition, 0, BitArray.this.length);
+            position = newPosition;
+        }
+
+        public boolean hasPrevious() {
+            return position != 0;
+        }
+
+        public void set(final long value, final int length) {
+            if (length > position)
+                throw new IllegalStateException();
+            BitArray.this.set(position - length, value, length);
+        }
+
+        public void goToEnd() {
+            position = BitArray.this.length;
         }
     }
 

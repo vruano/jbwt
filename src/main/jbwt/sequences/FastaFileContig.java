@@ -49,7 +49,7 @@ public class FastaFileContig implements Contig {
     }
 
     @Override
-    public Alphabet<DNASymbol> getAlphabet() {
+    public Alphabet<DNASymbol> alphabet() {
         return DNASymbol.ALPHABET;
     }
 
