@@ -40,13 +40,20 @@ public final class ParamUtils {
         }
     }
 
-    public static void requiresBetween(final long value, final long min, final long max) {
+    public static long requiresBetween(final long value, final long min, final long max) {
         if (value < min || value > max) {
+            throw new IllegalArgumentException();
+        }
+        return value;
+    }
+
+    public static void validLength(final int[] array, final int min, int max) {
+        if (array.length < min || array.length > max) {
             throw new IllegalArgumentException();
         }
     }
 
-    public static void validLength(final int[] array, final int min, int max) {
+    public static void validLength(final long[] array, final int min, int max) {
         if (array.length < min || array.length > max) {
             throw new IllegalArgumentException();
         }

@@ -29,7 +29,6 @@ public class RLESymbolSequenceTest {
         result.add(new Object[] { "CAAACCCTAGGGTTG", "C3A3CTA3G2TG"});
         result.add(new Object[] { Strings.repeat("A", 200), "200A" });
         result.add(new Object[] { "", ""});
-        result.add(new Object[] { });
         return result.toArray(new Object[result.size()][]);
     }
 }

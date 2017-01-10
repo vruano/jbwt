@@ -1,30 +1,32 @@
 package jbwt.index;
 
+import jbwt.sequences.AbstractSymbolSequence;
 import jbwt.sequences.SymbolSequence;
 import jbwt.utils.ParamUtils;
+import scala.Array;
 
-import java.util.function.IntBinaryOperator;
+import java.util.NoSuchElementException;
+
+import static sun.management.snmp.jvminstr.JvmThreadInstanceEntryImpl.ThreadStateMap.Byte1.other;
 
 /**
  * Created by valentin on 1/3/17.
  */
-public final class RLESymbolSequence<S extends Symbol>  implements SymbolSequence<S> {
+public class RLESymbolSequence<S extends Symbol>  extends AbstractSymbolSequence<S> {
 
     private static final int INITAL_RUNS_SIZE = 128;
 
     private final int maximumRunLength;
-    private final int bitsPerSymbol;
-    private final int symbolMask;
-    private final int lengthMask;
-    private long length;
-    private int lengthInRuns;
+    protected final int bitsPerSymbol;
+    protected final int symbolMask;
+    protected final int lengthMask;
+    protected long length;
+    protected int lengthInRuns;
 
-    private final Alphabet<S> alphabet;
-
-    private byte[] runs;
+    protected byte[] runs;
 
     public RLESymbolSequence(final Alphabet<S> alphabet) {
-        this.alphabet = ParamUtils.requiresNonNull(alphabet);
+        super(alphabet);
         bitsPerSymbol = alphabet.bitsPerSymbol();
         if (bitsPerSymbol >= Byte.SIZE - 1)
             throw new IllegalArgumentException("this alphabet has too many symbols to male a RL encoding worthwhile");
@@ -49,6 +51,11 @@ public final class RLESymbolSequence<S extends Symbol>  implements SymbolSequenc
         return alphabet.toSymbol(runs[run] & symbolMask);
     }
 
+    @FunctionalInterface
+    interface BinaryIntToObjFunction<R> {
+        R apply(final int a, final int b);
+    }
+
     private int search(final long position) {
         if (position < (length >> 1)) {
             return searchFromBeginning(position, (run, __) -> run);
@@ -57,26 +64,26 @@ public final class RLESymbolSequence<S extends Symbol>  implements SymbolSequenc
         }
     }
 
-    private int searchFromEnd(final long position, final IntBinaryOperator resultComposer) {
+    protected final <R> R searchFromEnd(final long position, final BinaryIntToObjFunction<R> resultComposer) {
         if (length == position)
-            return resultComposer.applyAsInt(lengthInRuns, 0);
+            return resultComposer.apply(lengthInRuns, 0);
         long remaining = length - position;
         for (int i = lengthInRuns - 1; i > 0; --i) {
             final int iLength = 1 + ((runs[i] & lengthMask) >>> bitsPerSymbol);
             if ((remaining -= iLength) <= 0)
-                return resultComposer.applyAsInt(i, (int) -remaining);
+                return resultComposer.apply(i, (int) -remaining);
         }
-        return resultComposer.applyAsInt(0, 0);
+        return resultComposer.apply(0, 0);
     }
 
-    private int searchFromBeginning(final long position, final IntBinaryOperator resultComposer) {
+    protected final <R> R searchFromBeginning(final long position, final BinaryIntToObjFunction<R> resultComposer) {
         long remaining = position;
         for (int i = 0; i < lengthInRuns; ++i) {
             final int iLength = 1 + ((runs[i] & lengthMask) >>> bitsPerSymbol);
             if ((remaining -= iLength) < 0)
-                return resultComposer.applyAsInt(i, iLength - (int) remaining);
+                return resultComposer.apply(i, iLength - (int) remaining);
         }
-        return resultComposer.applyAsInt(lengthInRuns, 0);
+        return resultComposer.apply(lengthInRuns, 0);
     }
 
     @Override
@@ -86,19 +93,14 @@ public final class RLESymbolSequence<S extends Symbol>  implements SymbolSequenc
         return runs[run] & symbolMask;
     }
 
-    @Override
-    public Alphabet<S> alphabet() {
-        return alphabet;
-    }
-
-    public void insert(final long position, final S symbol) {
+    public final void insert(final long position, final S symbol) {
         ParamUtils.requiresNonNull(symbol);
         ParamUtils.requiresBetween(position, 0, position);
         final int symbolInt = symbol.toInt();
 
-        final IntBinaryOperator insertor = (run, offset) -> {
+        final BinaryIntToObjFunction<Void> insertor = (run, offset) -> {
             insert(run, offset, symbolInt);
-            return 0; // value is ignored.
+            return null;
         };
 
         if (position < (length >> 1)) {
@@ -109,7 +111,7 @@ public final class RLESymbolSequence<S extends Symbol>  implements SymbolSequenc
         length++;
     }
 
-    private void insert(final int run, final int offset, final int symbolInt) {
+    protected void insert(final int run, final int offset, final int symbolInt) {
         if (run >= lengthInRuns) {
             insertBlanks(run, 1);
             runs[run] = (byte) (symbolInt | (1 << bitsPerSymbol));
@@ -158,9 +160,12 @@ public final class RLESymbolSequence<S extends Symbol>  implements SymbolSequenc
         lengthInRuns += count;
     }
 
-    public void append(final S symbol) {
+    public final void append(final S symbol) {
         ParamUtils.requiresNonNull(symbol);
-        final int symbolInt = symbol.toInt();
+        append(symbol.toInt());
+    }
+
+    protected void append(final int symbolInt) {
         if (length == 0) {
             lengthInRuns = 1;
             length = 1;
@@ -187,25 +192,32 @@ public final class RLESymbolSequence<S extends Symbol>  implements SymbolSequenc
         }
     }
 
-    public void append(final CharSequence text) {
+    public final void append(final CharSequence text) {
         ParamUtils.requiresNonNull(text);
         for (int i = 0; i < text.length(); i++)
             append(alphabet.valueOf(text.charAt(i)));
     }
 
-    public void append(final SymbolSequence<S> sequence) {
+    public final void append(final SymbolSequence<S> sequence) {
         ParamUtils.requiresNonNull(sequence);
-        for (final S symbol : sequence) {
-            append(symbol);
+        if ((sequence instanceof RLESymbolSequence) && ((RLESymbolSequence) sequence).alphabet == this.alphabet) {
+            append((RLESymbolSequence<S>) sequence);
+        } else {
+            for (final S symbol : sequence) {
+                append(symbol);
+            }
         }
     }
 
-    public void append(final RLESymbolSequence<S> other) {
-        ParamUtils.requiresNonNull(other);
+    protected void append(final RLESymbolSequence<S> other) {
         if (other.length == 0) {
             return;
-        } else if (other.bitsPerSymbol != this.bitsPerSymbol) {
+        } else if (!other.alphabet.equals(other.alphabet)) {
             append((SymbolSequence<S>) other);
+        } else if (length == 0) {
+            this.runs = other.runs.clone();
+            this.length = other.length;
+            this.lengthInRuns = other.lengthInRuns;
         } else {
             final int lastRun = lengthInRuns - 1;
             final int lastSymbol = runs[lastRun] & symbolMask;
@@ -223,6 +235,7 @@ public final class RLESymbolSequence<S extends Symbol>  implements SymbolSequenc
             length += other.length;
         }
     }
+
 
     public String toRLEString() {
         final StringBuilder builder = new StringBuilder(lengthInRuns << 1);
@@ -244,6 +257,7 @@ public final class RLESymbolSequence<S extends Symbol>  implements SymbolSequenc
         return builder.toString();
     }
 
+    @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder(lengthInRuns << 1);
 
@@ -272,5 +286,86 @@ public final class RLESymbolSequence<S extends Symbol>  implements SymbolSequenc
         builder.append(length == 1 ? "" : length).append(alphabet.toSymbol(symbol));
     }
 
+    interface Run<S extends Symbol> {
+        S symbol();
+        int symbolCode();
+        long length();
+    }
 
+
+    public Iterator<S> iterator(final long position) {
+
+        if (position < length >> 1)
+            return searchFromBeginning(position, (run, offset) -> new RLEIterator(position, run, offset));
+        else
+            return searchFromEnd(position, (run, offset) -> new RLEIterator(position, run, offset));
+    }
+
+
+    private class RLEIterator implements Iterator<S> {
+
+        private long nextPosition;
+        private int currentRunIndex;
+        private int currentRunLength;
+        private S currentRunSymbol;
+        private int nextOffsetInRun;
+
+        public RLEIterator(final long position, final int run, final int offset) {
+            nextPosition = position;
+            currentRunIndex = run;
+            currentRunSymbol = alphabet.toSymbol(runs[run] & symbolMask);
+            currentRunLength = 1 + ((runs[run] & lengthMask) >>> bitsPerSymbol);
+            nextOffsetInRun = offset;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return nextPosition < length;
+        }
+
+        @Override
+        public S next() {
+            if (nextPosition >= length())
+                throw new NoSuchElementException();
+            if (currentRunLength == nextOffsetInRun) {
+                currentRunIndex++;
+                currentRunSymbol = alphabet.toSymbol(runs[currentRunIndex] & symbolMask);
+                currentRunLength = 1 + ((runs[currentRunIndex] & lengthMask) >>> bitsPerSymbol);
+                nextOffsetInRun = 0;
+            }
+            nextPosition++;
+            nextOffsetInRun++;
+            return currentRunSymbol;
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return nextPosition > 0;
+        }
+
+        @Override
+        public S previous() {
+            if (nextPosition <= 0)
+                throw new NoSuchElementException();
+            if (nextOffsetInRun == 0) {
+                currentRunIndex--;
+                currentRunSymbol = alphabet.toSymbol(runs[currentRunIndex] & symbolMask);
+                currentRunLength = 1 + ((runs[currentRunIndex] & lengthMask) >>> bitsPerSymbol);
+                nextOffsetInRun = currentRunLength;
+            }
+            nextPosition--;
+            nextOffsetInRun--;
+            return currentRunSymbol;
+        }
+
+        @Override
+        public long nextPosition() {
+            return nextPosition;
+        }
+
+        @Override
+        public long previousPosition() {
+            return nextPosition - 1;
+        }
+    }
 }
