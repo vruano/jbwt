@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.google.code.java-allocation-instrumenter:java-allocation-instrumenter:3.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.code.java-allocation-instrumenter/java-allocation-instrumenter/3.0/2e0cca505a5d64da11bf265158f2a52d150050b2/java-allocation-instrumenter-3.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.code.java-allocation-instrumenter/java-allocation-instrumenter/3.0/40f9f96ff63c680ca479e00dde2d367551ce56d/java-allocation-instrumenter-3.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

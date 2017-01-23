@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.google.caliper:caliper:1.0-beta-2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.caliper/caliper/1.0-beta-2/1b77f5891583a8022bbe71338d3a589f4cbb368e/caliper-1.0-beta-2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.caliper/caliper/1.0-beta-2/4bfa7e3ac03313b1b5ff2acae2a8a144b1469d87/caliper-1.0-beta-2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

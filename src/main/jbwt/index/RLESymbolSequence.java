@@ -81,7 +81,7 @@ public class RLESymbolSequence<S extends Symbol>  extends AbstractSymbolSequence
         for (int i = 0; i < lengthInRuns; ++i) {
             final int iLength = 1 + ((runs[i] & lengthMask) >>> bitsPerSymbol);
             if ((remaining -= iLength) < 0)
-                return resultComposer.apply(i, iLength - (int) remaining);
+                return resultComposer.apply(i, iLength + (int) remaining);
         }
         return resultComposer.apply(lengthInRuns, 0);
     }
@@ -114,7 +114,7 @@ public class RLESymbolSequence<S extends Symbol>  extends AbstractSymbolSequence
     protected void insert(final int run, final int offset, final int symbolInt) {
         if (run >= lengthInRuns) {
             insertBlanks(run, 1);
-            runs[run] = (byte) (symbolInt | (1 << bitsPerSymbol));
+            runs[run] = (byte) (symbolInt);
             return;
         }
         final int runSymbol = runs[run] & symbolMask;
@@ -237,8 +237,16 @@ public class RLESymbolSequence<S extends Symbol>  extends AbstractSymbolSequence
     }
 
 
-    public String toRLEString() {
+
+
+    @FunctionalInterface
+    private interface ToStringRunAppender {
+            void apply(final StringBuilder builder, final int length, final int symbolCode);
+    }
+
+    private String toString(final ToStringRunAppender appender) {
         final StringBuilder builder = new StringBuilder(lengthInRuns << 1);
+
         if (lengthInRuns == 0) return "";
         int length = 1 + ((runs[0] & lengthMask) >>> bitsPerSymbol);
         int symbol = runs[0] & symbolMask;
@@ -246,44 +254,35 @@ public class RLESymbolSequence<S extends Symbol>  extends AbstractSymbolSequence
             final int nextSymbol = runs[i] & symbolMask;
             final int nextLength = 1 + ((runs[i] & lengthMask) >>> bitsPerSymbol);
             if (nextSymbol != symbol) {
-                builder.append(length == 1 ? "" : length).append(alphabet.toSymbol(symbol));
+                appender.apply(builder, length, symbol);
                 length = nextLength;
                 symbol = nextSymbol;
             } else {
                 length += nextLength;
             }
         }
-        builder.append(length == 1 ? "" : length).append(alphabet.toSymbol(symbol));
+        appender.apply(builder, length, symbol);
         return builder.toString();
+
+
     }
 
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder(lengthInRuns << 1);
-
-        if (lengthInRuns == 0) return "";
-        int length = 1 + ((runs[0] & lengthMask) >>> bitsPerSymbol);
-        int symbol = runs[0] & symbolMask;
-        for (int i = 1; i < lengthInRuns; i++) {
-            final int nextSymbol = runs[i] & symbolMask;
-            final int nextLength = 1 + ((runs[i] & lengthMask) >>> bitsPerSymbol);
-            if (nextSymbol != symbol) {
-                toStringAppend(builder, length, symbol);
-                length = nextLength;
-                symbol = nextSymbol;
-            } else {
-                length += nextLength;
+        return toString((b, l, s) -> {
+            final String str = alphabet.toSymbol(s).toString();
+            for (int i = 0; i < l; i++) {
+                b.append(str);
             }
-        }
-        toStringAppend(builder, length, symbol);
-        return builder.toString();
+        });
     }
 
-    private void toStringAppend(StringBuilder builder, int length, int symbol) {
-        final String c = alphabet.toSymbol(symbol).toString();
-        for (int j = 0; j < length; j++)
-            builder.append(c);
-        builder.append(length == 1 ? "" : length).append(alphabet.toSymbol(symbol));
+    public String toRLEString() {
+        return toString((b, l, s) -> {
+            if (l != 1)
+                b.append(l);
+            b.append(alphabet.toSymbol(s).toString());
+        });
     }
 
     interface Run<S extends Symbol> {

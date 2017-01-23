@@ -40,7 +40,7 @@ public class BCRSymbolSequence<S extends Symbol> extends RLESymbolSequence<S> {
         long result = 0;
         for (int run = 0; run < lengthInRuns; run++) {
             final int runSymbol = runs[run] & symbolMask;
-            final int runLength = 1 + ((runs[run] & lengthInRuns) >>> bitsPerSymbol);
+            final int runLength = 1 + ((runs[run] & lengthMask) >>> bitsPerSymbol);
             if (remaining <= runLength) {
                 return runSymbol == symbolInt ? result + remaining : result;
             } else {
@@ -84,7 +84,7 @@ public class BCRSymbolSequence<S extends Symbol> extends RLESymbolSequence<S> {
         long result = 0;
         for (int run = lengthInRuns - 1; run >= 0; run--) {
             final int runSymbol = runs[run] & symbolMask;
-            final int runLength = 1 + ((runs[run] & lengthInRuns) >>> bitsPerSymbol);
+            final int runLength = 1 + ((runs[run] & lengthMask) >>> bitsPerSymbol);
             if (remaining <= runLength) {
                 return runSymbol == symbolInt ? result + remaining : result;
             } else {

@@ -74,11 +74,11 @@ public class Alphabet<A extends Symbol>  {
         return symbols.clone();
     }
 
-    public A valueOf(int symbol) {
-        if (symbol < 0 || symbol >= symbols.length)
-            throw new IllegalArgumentException();
-        else
-            return symbols[symbol];
+    public A valueOf(int ch) {
+        for (final A symbol : symbols)
+            if (symbol.toString().equals("" + ch))
+                return symbol;
+        throw new IllegalArgumentException();
     }
 
     public int size() {

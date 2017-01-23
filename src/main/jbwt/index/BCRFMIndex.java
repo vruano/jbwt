@@ -37,13 +37,13 @@ public class BCRFMIndex<A extends Symbol, S extends SymbolSequence<A>> implement
         final Set<InsertionSequenceTracker> remaining = sequences.stream()
                 .filter(s -> s.length() > 0)
                 .map(InsertionSequenceTracker::new)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         @SuppressWarnings("unchecked")
-        final Set<InsertionSequenceTracker>[] remainingPerSymbol =
-                (Set<InsertionSequenceTracker>[]) alphabet.symbols().stream()
-                .map((__) -> new TreeSet<>())
-                .toArray(Set[]::new);
+        final Set<InsertionSequenceTracker>[][] remainingPerSymbol =
+                (Set<InsertionSequenceTracker>[][]) new Set[][] {
+                        alphabet.symbols().stream().map((__) -> new TreeSet<>()).toArray(Set[]::new),
+                        alphabet.symbols().stream().map((__) -> new TreeSet<>()).toArray(Set[]::new)};
 
         if (remaining.isEmpty())
             return;
@@ -53,44 +53,49 @@ public class BCRFMIndex<A extends Symbol, S extends SymbolSequence<A>> implement
 
         final long[][] symbolAccumulateCountMatrix = new long[B.length + 1][alphabet.size()];
         final Queue<InsertionSequenceTracker> trackerToProcess = new ArrayDeque<>(sequences.size());
+        long iteration = 0;
         while (!remaining.isEmpty()) {
             updateAcummulateSymbolCountMatrix(symbolAccumulateCountMatrix);
-            indexBuildingIteration(remaining, remainingPerSymbol, symbolAccumulateCountMatrix, trackerToProcess);
+            indexBuildingIteration(remaining, iteration++, remainingPerSymbol, symbolAccumulateCountMatrix, trackerToProcess);
         }
     }
 
-    private void indexBuildingInitialization(Set<InsertionSequenceTracker> remaining, Set<InsertionSequenceTracker>[] remainingPerSymbol) {
+    private void indexBuildingInitialization(Set<InsertionSequenceTracker> remaining, Set<InsertionSequenceTracker>[][] remainingPerSymbol) {
+        final int sentinelCode = alphabet.sentinel().toInt();
         for (final InsertionSequenceTracker tracker : remaining) {
-            tracker.bIndex = alphabet.sentinel().toInt();
-            tracker.bPosition = B[0].length();
+            tracker.bIndex = sentinelCode;
+            tracker.bPosition = B[sentinelCode].length();
             tracker.bSymbol = tracker.previousSymbol();
             B[tracker.bIndex].append(tracker.bSymbol);
-            remainingPerSymbol[tracker.bSymbol.toInt()].add(tracker);
+            remainingPerSymbol[0][tracker.bSymbol.toInt()].add(tracker);
         }
     }
 
-    private void indexBuildingIteration(Set<InsertionSequenceTracker> remaining, Set<InsertionSequenceTracker>[] remainingPerSymbol, long[][] symbolAccumulateCountMatrix, Queue<InsertionSequenceTracker> trackerToProcess) {
+    private void indexBuildingIteration(final Set<InsertionSequenceTracker> remaining, final long iteration, final Set<InsertionSequenceTracker>[][] remainingPerSymbol, long[][] symbolAccumulateCountMatrix, Queue<InsertionSequenceTracker> trackerToProcess) {
+        final int remainingFromIndex = (iteration & 1L) == 0 ? 0 : 1;
+        final int remainingToIndex = remainingFromIndex == 0 ? 1 : 0;
         for (int symbolCode = 0; symbolCode < B.length; symbolCode++) {
-            trackerToProcess.addAll(remainingPerSymbol[symbolCode]);
-            remainingPerSymbol[symbolCode].clear();
+            trackerToProcess.addAll(remainingPerSymbol[remainingFromIndex][symbolCode]);
+            remainingPerSymbol[remainingFromIndex][symbolCode].clear();
             while (!trackerToProcess.isEmpty()) {
                 final InsertionSequenceTracker tracker = trackerToProcess.remove();
-                final long position = symbolAccumulateCountMatrix[tracker.bIndex][symbolCode]
-                        + B[tracker.bIndex].symbolCountTo(symbolCode, tracker.bPosition);
-                B[symbolCode].insert(position, tracker.bSymbol);
-                if (tracker.bSymbol.isSentinel()) // we reached the end of the sequence.
+                //B[symbolCode].insert(position, tracker.bSymbol);
+                if (!tracker.hasPrevious()) // we reached the end of the sequence.
                     remaining.remove(tracker);
                 else {
+                    final long position = symbolAccumulateCountMatrix[tracker.bIndex][symbolCode]
+                            + B[tracker.bIndex].symbolCountTo(symbolCode, tracker.bPosition);
                     tracker.bIndex = symbolCode;
                     tracker.bPosition = position;
                     tracker.bSymbol = tracker.previousSymbol();
-                    remainingPerSymbol[tracker.bSymbol.toInt()].add(tracker);
+                    B[symbolCode].insert(position, tracker.bSymbol);
+                    remainingPerSymbol[remainingToIndex][tracker.bSymbol.toInt()].add(tracker);
                 }
             }
         }
     }
 
-    private void updateAcummulateSymbolCountMatrix(long[][] symbolCountsBefore) {
+    private void updateAcummulateSymbolCountMatrix(final long[][] symbolCountsBefore) {
         B[0].copySymbolCounts(symbolCountsBefore[1]);
         for (int bIndex = 1; bIndex < B.length; bIndex++) {
             B[bIndex].copySymbolCounts(symbolCountsBefore[bIndex + 1]);
@@ -119,6 +124,7 @@ public class BCRFMIndex<A extends Symbol, S extends SymbolSequence<A>> implement
     private class InsertionSequenceTracker implements Comparable<InsertionSequenceTracker> {
         final S sequence;
         final SymbolSequence.Iterator<A> iterator;
+        boolean beyondBeginning = false;
 
         int bIndex;
 
@@ -129,19 +135,19 @@ public class BCRFMIndex<A extends Symbol, S extends SymbolSequence<A>> implement
 
         A bSymbol;
 
-        int bSymbolCode;
-
         private InsertionSequenceTracker(final S sequence) {
             this.sequence = sequence;
             this.iterator = sequence.iterator(sequence.length());
             bIndex = -1;
             bPosition = -1;
+            beyondBeginning = false;
         }
 
         private A previousSymbol() {
             if (iterator.hasPrevious()) {
                 return iterator.previous();
             } else {
+                beyondBeginning = true;
                 return alphabet.sentinel();
             }
         }
@@ -156,6 +162,10 @@ public class BCRFMIndex<A extends Symbol, S extends SymbolSequence<A>> implement
                 return Long.compare(this.bPosition, o.bPosition);
             else
                 return Integer.compare(Objects.hashCode(this), Objects.hashCode(o));
+        }
+
+        public boolean hasPrevious() {
+            return !beyondBeginning;
         }
     }
 }
