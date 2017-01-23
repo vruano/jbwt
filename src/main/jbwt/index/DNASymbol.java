@@ -11,30 +11,7 @@ public enum DNASymbol implements Symbol {
     }, A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N;
 
 
-    public static final Alphabet<DNASymbol> ALPHABET = new Alphabet<DNASymbol>(DNASymbol.values()) {
-                public DNASymbol valueOf(int ch) {
-                    switch(Character.toLowerCase(ch)) {
-                        case 'a' : return A;
-                        case 'c' : return C;
-                        case 'g' : return G;
-                        case 't' : return T;
-                        case 'n' : return N;
-                        case '$' : return $;
-                        case 'r' : return R;
-                        case 's' : return S;
-                        case 'w' : return W;
-                        case 'k' : return K;
-                        case 'm' : return M;
-                        case 'b' : return B;
-                        case 'd' : return D;
-                        case 'h' : return H;
-                        case 'v' : return V;
-                        case 'y' : return Y;
-                        default:
-                            throw new IllegalArgumentException();
-                    }
-                }
-    };
+    public static final Alphabet<DNASymbol> ALPHABET = new Alphabet<DNASymbol>(DNASymbol.values());
 
     public int toInt() {
         return ordinal();

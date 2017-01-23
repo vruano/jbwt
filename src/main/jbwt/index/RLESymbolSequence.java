@@ -192,12 +192,6 @@ public class RLESymbolSequence<S extends Symbol>  extends AbstractSymbolSequence
         }
     }
 
-    public final void append(final CharSequence text) {
-        ParamUtils.requiresNonNull(text);
-        for (int i = 0; i < text.length(); i++)
-            append(alphabet.valueOf(text.charAt(i)));
-    }
-
     public final void append(final SymbolSequence<S> sequence) {
         ParamUtils.requiresNonNull(sequence);
         if ((sequence instanceof RLESymbolSequence) && ((RLESymbolSequence) sequence).alphabet == this.alphabet) {
