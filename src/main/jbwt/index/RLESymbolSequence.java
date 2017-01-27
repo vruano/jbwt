@@ -26,6 +26,10 @@ public class RLESymbolSequence<S extends Symbol>  extends AbstractSymbolSequence
     protected byte[] runs;
 
     public RLESymbolSequence(final Alphabet<S> alphabet) {
+        this(alphabet, new byte[INITAL_RUNS_SIZE], 0, 0);
+    }
+
+    protected RLESymbolSequence(final Alphabet<S> alphabet, final byte[] runs, final int lengthInRuns, final long length) {
         super(alphabet);
         bitsPerSymbol = alphabet.bitsPerSymbol();
         if (bitsPerSymbol >= Byte.SIZE - 1)
@@ -34,9 +38,9 @@ public class RLESymbolSequence<S extends Symbol>  extends AbstractSymbolSequence
         maximumRunLength = 1 << bitsPerLength;
         symbolMask = (1 << bitsPerSymbol) - 1;
         lengthMask = ((1 << Byte.SIZE) - 1) ^ symbolMask;
-        runs = new byte[INITAL_RUNS_SIZE];
-        length = 0;
-        lengthInRuns = 0;
+        this.runs = runs;
+        this.length = length;
+        this.lengthInRuns = lengthInRuns;
     }
 
     @Override
@@ -93,7 +97,7 @@ public class RLESymbolSequence<S extends Symbol>  extends AbstractSymbolSequence
         return runs[run] & symbolMask;
     }
 
-    public final void insert(final long position, final S symbol) {
+    public void insert(final long position, final S symbol) {
         ParamUtils.requiresNonNull(symbol);
         ParamUtils.requiresBetween(position, 0, position);
         final int symbolInt = symbol.toInt();

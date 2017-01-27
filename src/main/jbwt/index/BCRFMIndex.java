@@ -13,16 +13,21 @@ public class BCRFMIndex<A extends Symbol, S extends SymbolSequence<A>> implement
 
     private final Alphabet<A> alphabet;
 
-    private BCRSymbolSequence<A>[] B;
+    private BCRSymbolSequence<A, Location<S>>[] B;
+
+    private final long[] symbolCounts;
+
+    private static final long locationMask = 64 - 1;
 
     public BCRFMIndex(final Alphabet<A> alphabet) {
         this.alphabet = ParamUtils.requiresNonNull(alphabet);
+        symbolCounts = new long[alphabet.size()];
         B = composeB(alphabet);
     }
 
     @SuppressWarnings("unchecked")
-    private static <A extends Symbol> BCRSymbolSequence<A>[] composeB(Alphabet<A> alphabet) {
-        return (BCRSymbolSequence<A>[]) alphabet.symbols().stream()
+    private static <A extends Symbol, S extends SymbolSequence<A>> BCRSymbolSequence<A, Location<S>>[] composeB(final Alphabet<A> alphabet) {
+        return (BCRSymbolSequence<A, Location<S>>[]) alphabet.symbols().stream()
                 .map(s -> new BCRSymbolSequence<>(alphabet))
                 .toArray(BCRSymbolSequence[]::new);
     }
@@ -66,8 +71,12 @@ public class BCRFMIndex<A extends Symbol, S extends SymbolSequence<A>> implement
             tracker.bIndex = sentinelCode;
             tracker.bPosition = B[sentinelCode].length();
             tracker.bSymbol = tracker.previousSymbol();
-            B[tracker.bIndex].append(tracker.bSymbol);
+            if ((tracker.iterator.nextPosition() & locationMask) == 0)
+                B[tracker.bIndex].insert(0, tracker.bSymbol, new Location<>(tracker.sequence, tracker.iterator.nextPosition()));
+            else
+                B[tracker.bIndex].append(tracker.bSymbol);
             remainingPerSymbol[0][tracker.bSymbol.toInt()].add(tracker);
+            symbolCounts[tracker.bSymbol.toInt()]++;
         }
     }
 
@@ -88,8 +97,13 @@ public class BCRFMIndex<A extends Symbol, S extends SymbolSequence<A>> implement
                     tracker.bIndex = symbolCode;
                     tracker.bPosition = position;
                     tracker.bSymbol = tracker.previousSymbol();
-                    B[symbolCode].insert(position, tracker.bSymbol);
-                    remainingPerSymbol[remainingToIndex][tracker.bSymbol.toInt()].add(tracker);
+                    final int bSymbolCode = tracker.bSymbol.toInt();
+                    if ((tracker.iterator.nextPosition() & locationMask) == 0)
+                        B[symbolCode].insert(position, tracker.bSymbol, new Location<S>(tracker.sequence, tracker.iterator.nextPosition()));
+                    else
+                        B[symbolCode].insert(position, tracker.bSymbol);
+                    symbolCounts[bSymbolCode]++;
+                    remainingPerSymbol[remainingToIndex][bSymbolCode].add(tracker);
                 }
             }
         }
@@ -110,7 +124,7 @@ public class BCRFMIndex<A extends Symbol, S extends SymbolSequence<A>> implement
 
     public SymbolSequence<A> toBWTSequence() {
         final RLESymbolSequence<A> result = new RLESymbolSequence<>(alphabet);
-        for (final BCRSymbolSequence<A> sub : B)
+        for (final BCRSymbolSequence<A, Location<S>> sub : B)
             result.append(sub);
         return result;
     }

@@ -1,18 +1,33 @@
 package jbwt.index;
 
+import jbwt.index.utils.*;
+import jbwt.index.utils.BCRSuffixArray;
 import jbwt.sequences.SymbolSequence;
 import jbwt.utils.ParamUtils;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Created by valentin on 1/5/17.
  */
-public class BCRSymbolSequence<S extends Symbol> extends RLESymbolSequence<S> {
+public class BCRSymbolSequence<S extends Symbol, A> extends RLESymbolSequence<S> {
+
+    private BCRSuffixArray<A> suffixArray;
 
     private final long[] symbolCounts;
 
     public BCRSymbolSequence(final Alphabet<S> alphabet) {
         super(alphabet);
         symbolCounts = new long[alphabet.size()];
+        suffixArray = new BCRSuffixArray<>();
+    }
+
+    private BCRSymbolSequence(final Alphabet<S> alphabet, final byte[] runs, final int lengthInRuns, final long length, final long[] symbolCounts) {
+        super(alphabet, runs, lengthInRuns, length);
+        this.symbolCounts = symbolCounts;
     }
 
     public long symbolCount(final S symbol) {
@@ -53,6 +68,17 @@ public class BCRSymbolSequence<S extends Symbol> extends RLESymbolSequence<S> {
     }
 
     @Override
+    public void insert(final long position, final S symbol) {
+        super.insert(position, symbol);
+        suffixArray.insert(position, 1);
+    }
+
+    public void insert(final long position, final S symbol, final A annotationValue) {
+        super.insert(position, symbol);
+        suffixArray.insert(position, annotationValue);
+    }
+
+    @Override
     protected void insert(final int run, final int offset, final int symbol) {
         super.insert(run, offset, symbol);
         symbolCounts[symbol]++;
@@ -69,7 +95,8 @@ public class BCRSymbolSequence<S extends Symbol> extends RLESymbolSequence<S> {
         super.append(other);
         if (other instanceof BCRSymbolSequence) {
             for (int i = 0; i < symbolCounts.length; i++)
-                symbolCounts[i] += ((BCRSymbolSequence<S>)other).symbolCounts[i];
+                symbolCounts[i] += ((BCRSymbolSequence<S, A>)other).symbolCounts[i];
+            suffixArray.append(length, ((BCRSymbolSequence<S, A>)other).suffixArray);
         } else {
             for (int run = 0; run < other.lengthInRuns; run++) {
                 final int runSymbol = other.runs[run] & symbolMask;
@@ -100,5 +127,41 @@ public class BCRSymbolSequence<S extends Symbol> extends RLESymbolSequence<S> {
         ParamUtils.requiresNonNull(destination);
         ParamUtils.validLength(destination, symbolCounts.length, symbolCounts.length);
         System.arraycopy(symbolCounts, 0, destination, 0, symbolCounts.length);
+    }
+
+    public BCRSymbolSequence<S, A> splitTop() {
+        final int newLengthInRuns = (lengthInRuns + 1) >> 1;
+        final int resultLengthInRuns = lengthInRuns - newLengthInRuns;
+        final long[] resultSymbolCounts = new long[symbolCounts.length];
+        final byte[] resultRuns = new byte[runs.length];
+        System.arraycopy(runs, newLengthInRuns, resultRuns, 0, resultLengthInRuns);
+
+        long resultLength = 0;
+        for (int i = newLengthInRuns; i < lengthInRuns; i++) {
+            final int length =  1 + ((runs[i] & lengthMask) >>> bitsPerSymbol);
+            final int symbol = runs[i] & symbolMask;
+            resultSymbolCounts[symbol] += length;
+            resultLength += length;
+        }
+        length -= resultLength;
+        lengthInRuns -= resultLengthInRuns;
+        for (int i = 0; i < symbolCounts.length; i++)
+            symbolCounts[i] -= resultSymbolCounts[i];
+        return new BCRSymbolSequence<>(alphabet, resultRuns, resultLengthInRuns, resultLength, resultSymbolCounts);
+    }
+
+    private class Annotation<A> {
+        private long position;
+
+        private A value;
+
+        public Annotation(final long position) {
+            this.position = position;
+        }
+
+        public Annotation(final long position, final A annotationValue) {
+            this.position = position;
+            this.value = annotationValue;
+        }
     }
 }
