@@ -53,7 +53,7 @@ public class Alphabet<A extends Symbol>  {
     }
 
     private static <A extends Symbol> A[] checkOnSymbols(final A ... symbols) {
-        ParamUtils.containsNonNulls(symbols);
+        ParamUtils.requiresNoNull(symbols);
         if (symbols.length == 0)
             throw new IllegalArgumentException("there must be at least one symbol");
         if (!symbols[0].isSentinel())

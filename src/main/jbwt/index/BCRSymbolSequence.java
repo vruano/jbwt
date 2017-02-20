@@ -118,7 +118,7 @@ public class BCRSymbolSequence<S extends Symbol, A> extends RLESymbolSequence<S>
                 remaining -= runLength;
                 if (runSymbol == symbolInt)
                     result += runLength;
-            }
+            }   
         }
         return result;
     }

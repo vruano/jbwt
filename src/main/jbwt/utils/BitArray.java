@@ -256,6 +256,12 @@ public class BitArray implements Cloneable {
         }
     }
 
+    public BooleanIterator booleanIterator() {
+        return new BooleanIterator() {
+
+        };
+    }
+
     public Iterator iterator() {
         return new Iterator();
     }
@@ -266,6 +272,8 @@ public class BitArray implements Cloneable {
 
     public class Iterator {
         private long position;
+        private long buffer;
+        private int bufferSize;
 
         public Iterator() {
             position = 0;
@@ -283,7 +291,13 @@ public class BitArray implements Cloneable {
         public boolean nextBoolean() {
             if (position >= length)
                 throw new NoSuchElementException();
-            return BitArray.this.getBoolean(position++);
+            if (bufferSize-- == 0) {
+                buffer = BitArray.this.getLongUnchecked(position, bufferSize = Long.SIZE);
+            }
+            final boolean result = (buffer & 0x1L) != 0;
+            buffer >>>= 1;
+            position++;
+            return result;
         }
 
         public long nextLong() {
@@ -341,16 +355,24 @@ public class BitArray implements Cloneable {
             final long newPosition = position + increase;
             ParamUtils.requiresBetween(newPosition, 0, BitArray.this.length);
             position = newPosition;
+            position = newPosition;
         }
 
         public boolean hasPrevious() {
             return position != 0;
         }
 
+        public void set(final boolean value) {
+            if (length <= position)
+                throw new IllegalArgumentException();
+            setUnsafe(position++, value ? 1 : 0, 1);
+        }
+
         public void set(final long value, final int length) {
-            if (length > position)
+            if (BitArray.this.length - length  < position)
                 throw new IllegalStateException();
-            BitArray.this.set(position - length, value, length);
+            BitArray.this.setUnsafe(position, value, length);
+            position += length;
         }
 
         public void goToEnd() {
@@ -358,8 +380,38 @@ public class BitArray implements Cloneable {
         }
     }
 
+    public class BooleanIterator {
+
+        private long position;
+
+        private long buffer;
+        private int bufferBlock = -1;
+        private int bufferOffset = -1;
+
+        public void set(final boolean v) {
+            if (position >= length)
+                throw new IllegalStateException();
+            if (bufferOffset == BLOCK_SIZE || bufferOffset == -1) {
+                if (bufferBlock >= 0) blocks[bufferBlock] = buffer;
+                bufferBlock++;// = (int) (position >>> BLOCK_SIZE_IN_BITS);
+                buffer = blocks[bufferBlock];
+                bufferOffset = 0; //(int) (position & BITOFFSET_MASK);
+            }
+            if (v)
+                buffer |= BIT_MASK[bufferOffset++];
+            else
+                buffer &= ~(1 << bufferOffset++);
+            position++;
+        }
+
+        public void flush() {
+            if (bufferBlock != -1) {
+                blocks[bufferBlock] = buffer;
+            }
+        }
+    }
+
     private static int requiredBlocks(final long capacity) {
         return (int) ((capacity - 1L) / BLOCK_SIZE + 1L);
     }
-
 }

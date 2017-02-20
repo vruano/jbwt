@@ -1,7 +1,5 @@
 package jbwt.index.utils;
 
-import jbwt.utils.BitArray;
-
 import java.util.Arrays;
 
 /**

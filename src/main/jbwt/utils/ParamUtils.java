@@ -34,10 +34,11 @@ public final class ParamUtils {
         }
     }
 
-    public static void requiresBetween(final int value, final int min, final int max) {
+    public static int requiresBetween(final int value, final int min, final int max) {
         if (value < min || value > max) {
             throw new IllegalArgumentException();
         }
+        return value;
     }
 
     public static long requiresBetween(final long value, final long min, final long max) {
@@ -59,7 +60,7 @@ public final class ParamUtils {
         }
     }
 
-    public static void containsNonNulls(final Object ... array) {
+    public static <E>  E[] requiresNoNull(final E ... array) {
         if (array == null) {
             throw new NullPointerException();
         } else {
@@ -69,6 +70,7 @@ public final class ParamUtils {
                 }
             }
         }
+        return array;
     }
 
     public static int requiresGreaterThanZero(final int order) {
@@ -77,6 +79,11 @@ public final class ParamUtils {
     }
 
     public static int requiresNonNegative(final int value) {
+        if (value < 0) throw new IllegalArgumentException();
+        return value;
+    }
+
+    public static long requiresNonNegative(final long value) {
         if (value < 0) throw new IllegalArgumentException();
         return value;
     }

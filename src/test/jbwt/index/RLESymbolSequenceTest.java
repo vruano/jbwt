@@ -29,7 +29,7 @@ public class RLESymbolSequenceTest {
             final String expected = input.substring(0, insertPosition)
                     + insert + input.substring(insertPosition);
             final RLESymbolSequence<DNASymbol> rle = new RLESymbolSequence<>(DNASymbol.ALPHABET);
-            rle.append(input);
+            rle.append(new DNAStringSequence(input));
             for (int i = insert.length() - 1; i >= 0; i--)
                 rle.insert(insertPosition, DNASymbol.valueOf(insert.charAt(i)));
             Assert.assertEquals(rle.toString(), expected);
@@ -39,10 +39,13 @@ public class RLESymbolSequenceTest {
 
     @Test(dataProvider="insertData")
     public void testAppend(final String input, final String insert) {
+        Comparable<String> x;
+        Comparable<Object> o;
+
         final String expected = input + insert;
         final RLESymbolSequence<DNASymbol> subject = new RLESymbolSequence<>(DNASymbol.ALPHABET);
-        subject.append(input);
-        subject.append(insert);
+        subject.append(new DNAStringSequence(input));
+        subject.append(new DNAStringSequence(insert));
         Assert.assertEquals(subject.toString(), expected);
         Assert.assertEquals(subject.length(), expected.length());
     }
@@ -64,6 +67,7 @@ public class RLESymbolSequenceTest {
                 for (int j = 0; j < insertLength; j++) {
                     sb.append(DNASymbol.values()[rdn.nextInt(DNASymbol.values().length)].toString());
                 }
+                inserts.add(sb.toString());
             }
         }
 
