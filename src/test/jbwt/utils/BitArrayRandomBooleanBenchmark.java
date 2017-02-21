@@ -18,9 +18,6 @@ import java.util.Scanner;
 public class BitArrayRandomBooleanBenchmark {
 
 
-    public static void main(String[] args) {
-        CaliperMain.main(BitArrayRandomBooleanBenchmark.class, args);
-    }
 
     static long size = 1000;
 

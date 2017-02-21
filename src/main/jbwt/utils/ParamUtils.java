@@ -22,9 +22,10 @@ public final class ParamUtils {
     }
 
     public static long validIndex(final long value, final long from, final long to) {
-        if (value < from || value >= to) {
-            throw new IllegalArgumentException();
-        }
+        assert value >= from && value < to;
+    //    if (value < from || value >= to) {
+    //        throw new IllegalArgumentException();
+    //    }
         return value;
     }
 
