@@ -3,30 +3,30 @@ package jbwt.utils;
 /**
  * Created by valentin on 2/20/17.
  */
-public interface BigArrayOfInts {
+public interface BigArrayOfLongs {
 
     long length();
 
-    int get(final long i);
+    long get(final long i);
 
-    void set(final long i, final int v);
+    void set(final long i, final long v);
 
-    static BigArrayOfInts newInstance(final long length) {
+    static BigArrayOfLongs newInstance(final long length) {
         ParamUtils.requiresNonNegative(length);
         if (length <= Integer.MAX_VALUE)
-            return new BigArrayOfIntsUsingArray((int) length);
+            return new BigArrayOfLongsUsingArray((int) length);
         else
-            return new BigArrayOfIntsUsingMatrix(length);
+            return new BigArrayOfLongsUsingMatrix(length);
     }
 }
 
-final class BigArrayOfIntsUsingArray implements BigArrayOfInts {
+final class BigArrayOfLongsUsingArray implements BigArrayOfLongs {
 
-    private final int[] values;
-    private final int length;
+    private final long[] values;
+    private final long length;
 
-    BigArrayOfIntsUsingArray(final int length) {
-        values = new int[length];
+    BigArrayOfLongsUsingArray(final int length) {
+        values = new long[length];
         this.length = values.length;
     }
 
@@ -36,26 +36,26 @@ final class BigArrayOfIntsUsingArray implements BigArrayOfInts {
     }
 
     @Override
-    public int get(long i) {
+    public long get(long i) {
         ParamUtils.validIndex(i, 0, values.length);
         return values[(int) i];
     }
 
     @Override
-    public void set(long i, int v) {
+    public void set(long i, long v) {
         ParamUtils.validIndex(i, 0, length);
         values[(int) i] = v;
     }
 }
 
-final class BigArrayOfIntsUsingMatrix implements BigArrayOfInts {
+class BigArrayOfLongsUsingMatrix implements BigArrayOfLongs {
 
-    private final int[][] values;
+    private final long[][] values;
     private final int columnBits;
     private final int columnMask;
-    private final long length;
+    final long length;
 
-    public BigArrayOfIntsUsingMatrix(final long size) {
+    public BigArrayOfLongsUsingMatrix(final long size) {
         if (size <= 1)
             throw new IllegalArgumentException("empty or one element array is not supported, use other approaches to handle such arrays");
         length = size;
@@ -63,7 +63,7 @@ final class BigArrayOfIntsUsingMatrix implements BigArrayOfInts {
         columnMask = (1 << columnBits) - 1;
         final int columns = 1 << columnBits;
         final int rows = (int) (Math.ceil(size / (double) columns));
-        values = new int[rows][columns];
+        values = new long[rows][columns];
     }
 
     @Override
@@ -72,7 +72,7 @@ final class BigArrayOfIntsUsingMatrix implements BigArrayOfInts {
     }
 
     @Override
-    public int get(long i) {
+    public long get(long i) {
         ParamUtils.requiresBetween(i, 0, length - 1);
         final int row = (int)(i >>> columnBits);
         final int column = (int)(i & columnMask);
@@ -80,36 +80,10 @@ final class BigArrayOfIntsUsingMatrix implements BigArrayOfInts {
     }
 
     @Override
-    public void set(long i, int v) {
+    public void set(long i, long v) {
         ParamUtils.requiresBetween(i, 0, length - 1);
         final int row = (int)(i >>> columnBits);
         final int column = (int)(i & columnMask);
         values[row][column] = v;
-    }
-}
-
-final class BigArrayOfIntsUsingBitArray extends BitArray implements BigArrayOfInts {
-
-    private final long length;
-
-    public BigArrayOfIntsUsingBitArray(final long size) {
-        super(size * Integer.SIZE);
-        length = size;
-        setLength(size * Integer.SIZE);
-    }
-
-    @Override
-    public long length() {
-        return length;
-    }
-
-    @Override
-    public int get(long i) {
-        return (int) getLong(i << 5, 32);
-    }
-
-    @Override
-    public void set(long i, int v) {
-        set(i << 5, v, 32);
     }
 }

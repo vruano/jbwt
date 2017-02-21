@@ -8,27 +8,27 @@ import com.google.caliper.runner.CaliperMain;
  * Created by valentin on 2/20/17.
  */
 @VmOptions({"-XX:-TieredCompilation"})
-public class BigArrayOfIntsBenchmark {
+public class BigArrayOfLongsBenchmark {
     public static void main(String[] args) {
-        CaliperMain.main( BigArrayOfIntsBenchmark.class, args);
+        CaliperMain.main( BigArrayOfLongsBenchmark.class, args);
     }
 
     private static int size = 10_000;
 
     @Benchmark
-    private void bigArrayOfIntsSequentialSet(final int reps) {
-        final BigArrayOfInts ints = BigArrayOfInts.newInstance(size);
+    private void bigArrayOfLongsSequentialSet(final int reps) {
+        final BigArrayOfLongs longs = BigArrayOfLongs.newInstance(size);
         for (int i = 0; i < reps; i++)
             for (int j = 0; j < size; j++)
-                ints.set(j, j);
+                longs.set(j, j);
     }
 
     @Benchmark
-    private void arrayOfIntsSequentialSet(final int reps) {
-        final int[] ints = new int[size];
+    private void arrayOfLongsSequentialSet(final int reps) {
+        final long[] longs = new long[size];
         for (int i = 0; i < reps; i++)
             for (int j = 0; j < size; j++)
-                ints[j] = j;
+                longs[j] = j;
     }
 
 }
